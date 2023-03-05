@@ -12,12 +12,17 @@
 # OUTPUT:  
 #          
 # SET UP -----------------------------------------------------------
+#
+# git add -A
+# git commit -m "some message saying what you did"
+# git push
+#
+# Remember to put " on each side of the message, an do NOT use ! or / or other 
+# weird characters.
 
 
 # clear out working space ###
 rm(list = ls())
-change 
-change 2
 # Load Packages ####
 library(qiime2R)
 library(tidyverse)
