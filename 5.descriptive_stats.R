@@ -69,4 +69,19 @@ timepoint6 %>%
   adorn_ns() %>% 
   kable %>% kable_classic(full_width = FALSE)
 
+# looking at breastfeeding continuous in relation to cog_cs
+ggplot(mm_meta, aes(y=bsid_mot_cs, x=breastfeedings_continuous)) +
+  geom_point() + geom_smooth(method=lm, level=0.99, se=TRUE, col='blue', size=1)
+
+ggplot(mm_meta, aes(y=bsid_lang_cs, x=breastmilk_per_day)) +
+  geom_point() + geom_smooth(method=lm, level=0.99, se=TRUE, col='blue', size=1)
+
+boxplot(mm_meta$bsid_cog_cs ~ mm_meta$breastmilk_per_day)
+
+modelForm <- as.formula(paste("bsid_cog_cs", "~breastfeedings_continuous + SES_index_final + mode_of_delivery_cat + baby_gender + gestational_age_cat"))
+modelInfo <- lm(modelForm, data = mm_meta)
+
+
+
+
 
