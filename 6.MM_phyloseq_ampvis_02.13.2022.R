@@ -23,9 +23,9 @@ meta4 <- "/Volumes/IPHY/ADORLab/HEI Study/16S Data/MM 16S Processed Files for Mo
 input <- "/Volumes/IPHY/ADORLab/HEI Study/16S Data/MM 16S Processed Files for Mom and Infants 05Jan21/"
 
 # Formatting Meta Data ####
-meta <- read.csv(paste0(meta1,"3_mothersMilk_metadata_timepointsAsRows_updated051022_Temporary24mDiet.csv"), sep=",", header=TRUE)
-meta <- as.data.frame(meta)
-meta <- read.csv("/Volumes/IPHY/ADORLab/__Users/emye7956/MM/code_review/input_files/a_meta.csv") #all participants & tpts 
+meta_full <- read.csv(paste0(meta1,"3_mothersMilk_metadata_timepointsAsRows_updated051022_Temporary24mDiet.csv"), sep=",", header=TRUE)
+meta <- as.data.frame(meta_full)
+#meta <- read.csv("/Volumes/IPHY/ADORLab/__Users/emye7956/MM/code_review/input_files/a_meta.csv") #all participants & tpts 
 
 
 # Formatting Taxa table ####
