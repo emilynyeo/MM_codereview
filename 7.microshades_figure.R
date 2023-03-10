@@ -20,23 +20,38 @@ library(microshades)
 #BiocManager::install("DESeq2")
 library(DESeq2)
 
-#load phyloseq object 
+#load phyloseq object ####
 ps_object <- readRDS(paste0(d3, "phyloseq_object.rds"))
+ps_obj_ab_tested <- readRDS(paste0(d3, "phyloseq_object_abundance_tested.rds"))
+source("6.MM_phyloseq_ampvis_02.13.2022.R") #using physeq_object for now
 
-#Transform the abundance data from the phyloseq object to be suitable for use with the deseq2 package:
-your_deseq2_object <- phyloseq_to_deseq2(ps_object, ~ SampleID)
+#Begin using microshades functions to evaluate abundance and apply advanced color organization at the Phylum Family level.
 
+# Use microshades function prep_mdf to agglomerate, normalize, and melt the phyloseq object
+my_mdf_prep <- prep_mdf(my_s3, subgroup_level = "Family")
 
-#FIX FROM HERE DOWN
-#Normalize the abundance data in your phyloseq object to relative abundance:
-your_phyloseq_object_rel <- transform_sample_counts(ps_object, function(x) x/sum(x))
+# Create a color object for the specified data
+my_color<- create_color_dfs(my_mdf_prep, group_level = "Phylum", subgroup_level = "Family", cvd = TRUE)
 
-#Create a MicroShades color dataframe:
-color_df <- create_color_dfs(your_phyloseq_object_rel)$color_df
+# Extract
+my_mdf <- my_color$mdf
+my_cdf <- my_color$cdf
 
-# use prep_mdf funct to prep microshades dataframe, combining color_df ith abundance data
-mdf <- prep_mdf(your_phyloseq_object_rel, color_df)
+# plot abundance
+plot_1 <- plot_microshades(my_mdf, my_cdf, group_label = "Phylum Family")
 
-#create abuncance plot 
-microshades_plot(mdf)
+plot_1 + scale_y_continuous(labels = scales::percent, expand = expansion(0)) +
+  theme(legend.key.size = unit(0.2, "cm"), text=element_text(size=10)) +
+  theme(axis.text.x = element_text(size= 6)) 
 
+# reorder_samples_by will change the order of samples based on an abundance of a specified subgroup taxonomy
+new_sample_order_physeqMM <- reorder_samples_by(my_mdf, my_cdf, order = "Bacteroidaceae", group_level = "Phylum", subgroup_level = "Family", sink_abundant_groups = FALSE)
+
+mdf_new_smample_order <-new_sample_order_physeqMM$mdf
+cdf_new_smample_order <-new_sample_order_physeqMM$cdf
+
+plot_2 <- plot_microshades(mdf_new_smample_order, cdf_new_smample_order, group_label = "Phylum Family")
+
+plot_2 + scale_y_continuous(labels = scales::percent, expand = expansion(0)) +
+  theme(legend.key.size = unit(0.2, "cm"), text=element_text(size=10)) +
+  theme(axis.text.x = element_text(size= 6))
