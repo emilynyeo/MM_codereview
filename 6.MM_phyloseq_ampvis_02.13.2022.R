@@ -21,7 +21,7 @@ meta1 <- "/Volumes/IPHY/ADORLab/HEI Study/Master Datasets/Metadata/long/"
 # meta2 <- "/Volumes/ADORLab/__Users/emye7956/MM"
 meta4 <- "/Volumes/IPHY/ADORLab/HEI Study/16S Data/MM 16S Processed Files for Mom and Infants 05Jan21/taxonomy/"
 input <- "/Volumes/IPHY/ADORLab/HEI Study/16S Data/MM 16S Processed Files for Mom and Infants 05Jan21/"
-
+d3 <- "/Volumes/IPHY/ADORLab/__Users/emye7956/MM/code_review/input_files/"
 # Formatting Meta Data ####
 meta_full <- read.csv(paste0(meta1,"3_mothersMilk_metadata_timepointsAsRows_updated051022_Temporary24mDiet.csv"), sep=",", header=TRUE)
 meta <- as.data.frame(meta_full)
@@ -140,10 +140,13 @@ physeq100  = transform_sample_counts(physeq2, function(x) 100 * x/sum(x))
 
 # Testing some functions in phyloseq
 sample_names(physeq2)
-
 rank_names(physeq2)
-
 sample_variables(physeq2)
+
+# save the phyloseq object as a file for later use 
+file <- paste0(d3, "phyloseq_object.rds")
+saveRDS(physeq2, file = file)
+
 
 # Subsetting data - for instance, only keep 6 month timepoint
 physeq_6m <- subset_samples(physeq2, timepoint ==" 6")
