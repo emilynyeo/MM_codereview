@@ -1,0 +1,527 @@
+---
+title: "Lab Meeting April 25th "
+author: "Emily"
+format: html
+editor: visual
+---
+
+## Load Packages and Set Directories
+
+```{r setup, include=FALSE}
+pacman::p_load(knitr, tidyverse, magrittr, kableExtra, tidyverse, dplyr, qiime2R, xtable, tableone, outlyr, htmlTable, MASS)
+opts_chunk$set(echo = TRUE)
+```
+
+## Set Directories
+
+```{r}
+# clear out working space ###
+rm(list = ls())
+
+#load directories ####
+d1 <- "/Volumes/IPHY/ADORLab/HEI Study/Master Datasets/Metadata/long/"
+d2 <- "/Volumes/IPHY/ADORLab/__Users/emye7956/MM/code_review/metadata"
+d3 <- "/Volumes/IPHY/ADORLab/HEI Study/16S Data/MM 16S Processed Files for Mom and Infants 05Jan21/alpha diversity/"
+
+# read in meta data ####
+# meta_og <- read.csv(paste0(d1,"3_mothersMilk_metadata_timepointsAsRows_updated051022_Temporary24mDiet.csv"))
+
+#read in meta data with alpha diversity 
+meta_alpha <- read.csv("/Volumes/IPHY/ADORLab/__Users/emye7956/MM/code_review/input_files/a_meta.csv")
+```
+
+## Missing Variables Counts and Summaries
+
+Getting an idea of all variables (sum1), cognitive variables (sum2), and
+socio-economic/biological variables (sum3).
+
+```{r}
+# create summary tables
+meta_alpha6 <- meta_alpha %>% 
+  filter(timepoint == "6")
+
+#all
+sum1 <- meta_alpha6 %>% 
+  summary %>% 
+  xtable()
+
+# of just cognitive variables:
+sum2 <- meta_alpha6 %>% 
+  subset(select = c(bsid_cog_cs,bsid_mot_cs, bsid_lang_cs,bsid_mot_fm_ss,bsid_mot_gm_ss,bsid_ab_cs,bsid_se_cs, cog_low2high)) %>% 
+  summary() %>% 
+  xtable()
+  
+# of other variables:
+sum3 <- meta_alpha6 %>%
+  subset(select = c(#socio-economic variables
+                'SES_index_final','moms_ed_level','martial_status','pets',
+                #biological variables
+                'baby_birthweight_kg','prepreg_bmi_kgm2','mother_age', 
+                'father_age','inf_antibiotics','breastmilk_per_day',
+                'mode_of_delivery')) %>% 
+  summary() %>% 
+  xtable()
+
+# print table as html
+print(htmlTable(sum2)) 
+```
+
+## Removing infants with incomplete cognitive assessments
+
+alpha meta is the complete data set with all infants. I filtered for
+those with complete cognitive scores, and without notes to suggest
+problems during testing. This included the following dyad-id's:
+
+\- 101: missing language items.
+
+\- 176: Really shy, scared of everyone. Cried most of the time
+
+\- 180: Child was tired difficulty completing language portion
+
+\- 205: Child uncooperative, did not attempt anything not interested in.
+Would throw anything not interested in.
+
+\- 209: Mom is concerned about child. Child does not talk and is angry a
+lot
+
+Removing those above, there were - 17 NA's, - 21 incomplete cases - 5
+suspicious cases - (171 - 5) = 166 complete cases
+
+```{r}
+# counting how many infants are complete 
+c <- meta_alpha %>% 
+  filter(timepoint == "6") %>% 
+  count(bayleys_test_bsid3_complete == "2")
+c
+
+amc1 <- meta_alpha %>% 
+  filter(bayleys_test_bsid3_complete == "2") #keeping only complete cases
+
+amc <- amc1 %>%  #removing special cases 
+  filter(!dyad_id == "101",
+         !dyad_id == "176",
+         !dyad_id == "180",
+         !dyad_id == "205",
+         !dyad_id == "209")
+
+#counting NA values 
+#colSums(is.na(amc %>% filter(timepoint == "6")))
+#colSums(is.na(amc %>% filter(timepoint == "12")))
+#colSums(is.na(amc %>% filter(timepoint == "24"))) # only have alpha diversity data for 6 and 12 months 
+```
+
+## Check for Outliers in cognitive variables
+
+Using the outlier package.
+
+\- group: (Optional) string indicating name of the grouping variable. If
+filled all further steps are done within-group.
+
+\- outlier: how flag outliers. 'z' flags values outside ± 3.28 SD range.
+'iqr' flags values outside 1.5 \* IQR range.
+
+ - treat:how treat outliers. 'trim' set them to NA. 'win' replace them
+by max/min. 'replace' does mean-replacement.
+
+Leaving them in for now. But worth exploring the results without.
+
+Bayleys classifies \<70 as severe mental developmental impairment
+
+```{r}
+plot(amc$bsid_cog_cs)
+
+#cog_vars <- amc %>% 
+#subset(select = c('bsid_cog_cs','bsid_lang_cs','bsid_lang_cs','bsid_mot_cs','bsid_mot_fm_ss',
+#                'bsid_mot_gm_ss','bsid_se_cs', 'bsid_ab_cs')) #variables to look up for.
+
+#new_cog_vars <- outlyr(amc, cog_vars, group = 'baby_gender', outlier = 'z', treat = 'trim')  
+
+#colSums(is.na(new_cog_vars)) #showing the number of NAs/outliers introduced
+```
+
+## Check for Outliers in alpha diversity variables
+
+at 6 months, there were 72,71 and 72 outliers for gut richness, Shannon
+entropy, faith pd. There were apparently 107 outliers identified across
+all 3 metrics using the ± 3.28 SD methods and 114,112,and 114 identified
+using the iqr method. Seems a bit too high looking at the plots to
+remove
+
+Leaving them in for now. But worth exploring the results without.
+
+```{r}
+amc6 <- amc %>% filter(timepoint == "6")
+amc12 <- amc %>% filter(timepoint == "12")
+
+plot(amc6$gut_richness) #participant 83
+plot(amc6$faith_pd) #176
+plot(amc6$shannon_entropy)
+
+alpha_vars <- c('gut_richness','shannon_entropy','faith_pd') # changing to outliers to NA 
+#new_a_vars6 <- outlyr(amc6, alpha_vars, group = 'baby_gender', outlier = 'z', treat = 'trim')
+#new_a_vars12 <- outlyr(amc12, alpha_vars, group = 'baby_gender', outlier = 'iqr', treat = 'trim')
+
+#colSums(is.na(new_a_vars6))
+#colSums(is.na(new_a_vars12))
+```
+
+## Summary table for breast feeding and alpha diversity
+
+As breast feedings per day go down (indicating a switch to a variety of
+solid foods), alpha diversity increases.
+
+```{r}
+# mean breast milk by timepoint 
+meta_alpha %>% 
+  group_by(timepoint) %>%
+  summarize(`Mean breastmilk per day`= mean(breastmilk_per_day, na.rm = T),
+           `Mean Faith pd` = mean(faith_pd, na.rm = T),
+           `Mean Shannon` = mean(shannon_entropy, na.rm = T), 
+           `Mean Gut Richness` = mean(gut_richness, na.rm = T)) %>%
+  kable() %>% 
+    kable_classic(full_width = F)
+```
+
+## Table One Descriptive Stats
+
+```{r}
+meta_alpha6 <- meta_alpha %>%
+      filter(timepoint == "6")
+
+vars<- c('timepoint','bsid_cog_cs',
+'SES_index_final','moms_ed_level','martial_status','pets','baby_gender','baby_birthweight_kg','prepreg_bmi_kgm2','mother_age', 'father_age','inf_antibiotics','breastmilk_per_day'
+,'gestational_age_category','mode_of_delivery'
+#alpha diversity variables 
+ ,'shannon_entropy', 'faith_pd','gut_richness')
+
+cont_vars <- c('bsid_cog_cs', 'baby_birthweight_kg','prepreg_bmi_kgm2','mother_age', 'father_age','SES_index_final')
+
+cat_vars <- c('timepoint','moms_ed_level','martial_status','pets','baby_gender','inf_antibiotics','breastmilk_per_day'
+,'gestational_age_category','mode_of_delivery')
+
+CreateTableOne(vars = vars, data = meta_alpha, factorVars = cat_vars, addOverall = TRUE)
+```
+
+## DAG lm: Using regression to assess descriptive stats at t6m
+
+lm1: Original model I was working with
+
+lm2: DAG 1: SES and moms education were significant predictors. gender
+was nearly
+
+lm3: DAG 2: SES and gender only 
+
+```{r}
+lm1 <- lm(bsid_cog_cs ~ SES_index_final + breastmilk_per_day + gestational_age_category + prepreg_bmi_kgm2 + baby_birthweight_kg + baby_gender + mode_of_delivery + mother_age, data = amc)
+
+#model from DAG
+lm2 <- lm(bsid_cog_cs ~ moms_ed_level + SES_index_final + baby_gender, data = amc)
+
+lm3 <- lm(bsid_cog_cs ~ SES_index_final + baby_gender, data = amc)
+
+summary(lm1)
+summary(lm2)
+summary(lm3)
+```
+
+## Linear Regression Model Diagnostics for DAG models
+
+http://sthda.com/english/articles/39-regression-model-diagnostics/161-linear-regression-assumptions-and-diagnostics-in-r-essentials
+
+```{r}
+plot(lm1)
+```
+
+For the second (preferred DAG)
+```{r}
+plot(lm2) # Should I remove 421 and 54?
+```
+
+Simplest DAG
+```{r}
+plot(lm3)
+```
+
+---------------------------------
+
+## No DAG: Forward model selection for descriptive variables
+
+```{r}
+amc2 <- subset(amc, select = -c(X,merge_id_dyad, dyad_id, bsid_notes, bsid_mot_cs, bsid_lang_cs,bsid_mot_fm_ss, cog_quartile,cog_mean_sd, bsid_mot_gm_ss,bsid_ab_cs,mot_low2high,bsid_se_cs,
+    cog_low2high,bayleys_test_bsid3_complete,baby_gender_cat,gestational_age_cat))
+
+amc3 <- na.omit(amc2)
+
+#Produce a model with many predictors 
+m.full <- lm(bsid_cog_cs ~ ., data=amc3, na.action = "na.omit")
+
+#Produce a model with no predictors
+m.null <- lm(bsid_cog_cs ~ 1, data=amc3, na.action = "na.omit")
+
+#forward selection model
+m.forward <- 
+  step(object = m.null,
+       scope=formula(m.full), 
+       direction="forward")
+
+summary(m.full)
+summary(m.forward)
+```
+
+## Forward model selection for alpha diversity variables
+
+The residual sum of squares tells you how much of the dependent variable’s variation your model did not explain
+A lower RSS indicates a better fit of the regression model to the data.
+
+The AIC (Akaike Information Criterion) is another measure of the quality of a statistical model. It is based on the difference between the maximum likelihood estimate of the model parameters and the number of parameters in the model. A lower AIC indicates a better fit of the model to the data.
+
+You want both of these to be low. 
+
+```{r}
+#removing id so it's not included in the model
+amc2 <- subset(amc, select = -c(X,merge_id_dyad, dyad_id, bsid_notes, bsid_mot_cs, bsid_lang_cs,bsid_mot_fm_ss, cog_quartile,cog_mean_sd, bsid_mot_gm_ss,bsid_ab_cs,mot_low2high,bsid_se_cs,
+    cog_low2high,bayleys_test_bsid3_complete,baby_gender_cat,gestational_age_cat))
+
+amc3 <- na.omit(amc2)
+amcfaith <- amc2 %>% 
+  na.omit %>% subset(select = -c(shannon_entropy))
+
+#Produce a model with many predictors 
+m.full_faith <- lm(bsid_cog_cs ~ ., data=amcfaith, na.action = "na.omit")
+
+#Produce a model with no predictors
+m.null_faith <- lm(bsid_cog_cs ~ faith_pd, data=amcfaith, na.action = "na.omit")
+
+#forward selection model
+m.forward_faith <- 
+  step(object = m.null_faith,
+       scope=formula(m.full_faith), 
+       direction="forward")
+
+summary(m.full_faith)
+summary(m.null_faith)
+summary(m.forward_faith)
+coef(summary(m.forward_faith))
+```
+
+AIC deals with the trade-off between the goodness of fit of the model
+and the simplicity of the model, which helps to avoid both overfitting
+and underfitting.
+
+## Linear Regression Model Diagnostics for Forward Selection model
+
+```{r}
+DAGfaith <- lm(bsid_cog_cs ~ faith_pd + SES_index_final + baby_gender + moms_ed_level, data = amc6)
+plot(DAGfaith) #46, 81, 90, 98 
+plot(m.forward_faith)
+```
+
+-----------------------------------------
+
+## Alpha Diversity (6month) Loop using DAG and Forward Selection Models
+
+Not pretty. But it works. 
+
+```{r}
+# ReSet working directories ####
+d2 <- "/Volumes/IPHY/ADORLab/__Users/emye7956/MM/code_review/outputfiles/"
+d3 <- "/Volumes/IPHY/ADORLab/__Users/emye7956/MM/code_review/input_files/"
+d4 <- "/Volumes/IPHY/ADORLab/HEI Study/16S Data/MM 16S Processed Files for Mom and Infants 05Jan21/taxonomy/"
+
+# Input dataframe with correct timepoint (and prior editing)
+a_meta <- amc # rerun with meta_alpha to include inclomplete cases. I saw very little difference. 
+
+# Plot theme for graphs to come 
+mytheme <- theme(axis.line = element_line(size = 0.5, 
+                                          colour = "black"), 
+                 panel.background = element_rect(fill = "white"),
+                 legend.position = c(.95, .95),
+                 legend.justification = c("right", "top"),
+                 legend.box.just = "right",
+                 legend.margin = margin(6, 6, 6, 6))
+
+# REGRESSION LOOP
+
+# Setting up exposure to loop through
+ExposureFactors <- c( "gut_richness",
+                      "shannon_entropy",
+                      "faith_pd")
+
+# setting up outcomes to loop through 
+InfantFactors <- c("bsid_se_cs", "bsid_ab_cs", 
+                   "bsid_mot_cs", "bsid_cog_cs",
+                   "bsid_lang_cs", "bsid_mot_gm_ss", "bsid_mot_fm_ss")
+
+# loop components 
+exposureNamesList <- character(0)
+#for model 1
+pVal1ExposureList <- numeric(0)
+beta1ExposureList <- numeric(0)
+beta1SDList <- numeric(0)
+beta1ScaledList <- numeric(0)
+CI1ExposureLowerList <- numeric(0)
+CI1ExposureUpperList <- numeric(0)
+CI1UpperScaledList <- numeric(0)
+CI1LowerScaledList <- numeric(0)
+#for model 2
+pVal2ExposureList <- numeric(0)
+beta2ExposureList <- numeric(0)
+beta2SDList <- numeric(0)
+beta2ScaledList <- numeric(0)
+CI2ExposureLowerList <- numeric(0)
+CI2ExposureUpperList <- numeric(0)
+CI2UpperScaledList <- numeric(0)
+CI2LowerScaledList <- numeric(0)
+
+Exposure0List <- numeric(0)
+Outcome0List <- character(0)
+allExposures <- ExposureFactors
+allpvals <- numeric(0)
+adjpvals <- numeric(0)
+
+#Sets up a loop to run through all cognitive outcomes
+for(j in seq(1:length(InfantFactors)))
+{
+  #For each cognitive outcome, we then loop through each of our exposures & incrementally build a linear model for each exposure/outcome pair
+  for(i in seq(1:length(ExposureFactors))) 
+    
+  {
+    
+    # Choose the timepoint of interest (remember to change the loop if you change it)
+    meta_6m <- a_meta %>% filter(timepoint == 6) #old run without removing 
+    
+    # Create dateframe without NAs (include all variables to be adjusted for in model)
+thisDataInstance = na.omit(data.frame(thisOutcome=meta_6m[,names(meta_6m) %in% InfantFactors[j]], thisExposureFactor = meta_6m[,names(meta_6m) %in% ExposureFactors[i]],
+                                          baby_gender=meta_6m$baby_gender,
+                                          birthweight=meta_6m$baby_birthweight_kg,
+                                          SES_index_model=meta_6m$SES_index_final,
+                                          prepreg_bmi_kgm2=meta_6m$prepreg_bmi_kgm2,
+                                          maternalage=meta_6m$mother_age,
+                                          gestationalagebl=meta_6m$gestational_age_category,
+                                          mode_of_delivery=meta_6m$mode_of_delivery,
+                                      moms_ed_level = meta_6m$moms_ed_level,
+                                      pets = meta_6m$pets))
+    
+    #linear model for plot
+    modelFormForPlot <- as.formula(paste(InfantFactors[j],"~",ExposureFactors[i]))
+    statModForPlot <- lm(modelFormForPlot, data=meta_6m)
+    
+    #1) Model 1 from DAG
+    modelForm1=as.formula(paste(InfantFactors[j],"~",ExposureFactors[i],"+",
+                                "SES_index_final", "+", 
+                                 "as.factor","(","baby_gender",")", "+",
+                                "as.factor", "(", "moms_ed_level",")"))
+    
+    #2) Model 2 from forward model selection
+    modelForm2=as.formula(paste(InfantFactors[j],"~",ExposureFactors[i],"+",
+                                "prepreg_bmi_kgm2", "+",
+                                "as.factor","(","pets",")",
+                  
+                                "*",ExposureFactors[i]))
+    
+    #prints model to be viewed in console as code runs
+    print(modelForm1); print(modelForm2)
+    
+    #Save Beta and Pvalue and put into a running list
+    statMod1 <- lm(modelForm1,data=meta_6m) 
+    beta1Exposure <- summary(statMod1)$coefficients[2,1] %>% round(3)
+    pVal1Exposure <- summary(statMod1)$coefficients[2,4] %>% round(3)
+    beta1ExposureList <- beta1ExposureList %>% append(beta1Exposure) %>% round(3)
+    pVal1ExposureList <- pVal1ExposureList %>% append(pVal1Exposure) %>% round(3)
+    
+    CI1ExposureLower <- confint(statMod1, level=0.95)[2,1] 
+    CI1ExposureUpper <- confint(statMod1, level=0.95)[2,2] 
+    CI1ExposureLowerList <- CI1ExposureLowerList %>% append(CI1ExposureLower) 
+    CI1ExposureUpperList <- CI1ExposureUpperList %>% append(CI1ExposureUpper) 
+    
+    Exposure0List <- Exposure0List %>% append(InfantFactors[j])
+    Outcome0List <- Outcome0List %>%  append(ExposureFactors[i])
+    
+    # pulling SD from 6m data set 
+    beta1SD <- sd(as.numeric((meta_6m[[ExposureFactors[i]]]) %>% na.omit))
+    beta1SDList <- beta1SDList %>% append(beta1SD)
+    
+    beta1Scaled <- (beta1Exposure * beta1SD) 
+    beta1ScaledList <- beta1ScaledList %>% append(beta1Scaled %>% round(2)) 
+    
+    CI1UpperScaled <- (CI1ExposureUpper * beta1SD) 
+    CI1UpperScaledList <- CI1UpperScaledList %>% append(CI1UpperScaled %>% round(2))
+    
+    CI1LowerScaled <- (CI1ExposureLower * beta1SD) 
+    CI1LowerScaledList <- CI1LowerScaledList %>% append(CI1LowerScaled %>% round(2))
+    
+    # repeating for model 2
+    statMod2 <- lm(modelForm2,data=meta_6m)
+    beta2Exposure <- summary(statMod2)$coefficients[5,1] %>% round(3)
+    pVal2Exposure <- summary(statMod2)$coefficients[5,4] %>% round(3)
+    beta2ExposureList <- beta2ExposureList %>% append(beta2Exposure %>% round(2))
+    pVal2ExposureList <- pVal2ExposureList %>% append(pVal2Exposure) %>% round(3)
+    
+    CI2ExposureLower <- confint(statMod2, level=0.95)[2,1] 
+    CI2ExposureUpper <- confint(statMod2, level=0.95)[2,2] 
+    CI2ExposureLowerList <- CI2ExposureLowerList %>% append(CI2ExposureLower) 
+    CI2ExposureUpperList <- CI2ExposureUpperList %>% append(CI2ExposureUpper) 
+    
+    # repeating for model 2. pulling SD from 6m data set  
+    beta2SD <- sd(as.numeric((meta_6m[[ExposureFactors[i]]]) %>% na.omit))
+    beta2SDList <- beta2SDList %>% append(beta2SD)
+    
+    beta2Scaled <- (beta2Exposure * beta2SD) 
+    beta2ScaledList <- beta2ScaledList %>% append(beta2Scaled %>% round(2)) 
+    
+    CI2UpperScaled <- (CI2ExposureUpper * beta2SD) 
+    CI2UpperScaledList <- CI2UpperScaledList %>% append(CI2UpperScaled %>% round(2))
+    
+    CI2LowerScaled <- (CI2ExposureLower * beta2SD) 
+    CI2LowerScaledList <- CI2LowerScaledList %>% append(CI2LowerScaled %>% round(2))
+    
+    #Plots show beta and p value for statMod1
+    title <- paste("Effect Size = ",
+                   format(beta1Exposure,digits=3),
+                   ", p-value=",
+                   format(pVal1Exposure,digits=3), 
+                   ", n = ",nrow(thisDataInstance), sep="")
+    
+    print(qplot(thisExposureFactor,thisOutcome, data = thisDataInstance) +
+            ggtitle(title) + 
+            labs(x=ExposureFactors[i], y=InfantFactors[j]) + 
+            mytheme + 
+            geom_smooth(method='lm'))
+  }
+  
+}
+graphics.off()
+
+```
+
+## Table alpha diversity regression loop outcomes
+
+```{r}
+#Table of model outcomes ####
+LM1 <- cbind(Exposure0List, Outcome0List, pVal1ExposureList, beta1ExposureList, CI1ExposureLowerList, CI1ExposureUpperList) %>% 
+  as_tibble()
+
+LM2 <- cbind(Exposure0List, Outcome0List, pVal2ExposureList, beta2ExposureList, CI2ExposureLowerList, CI2ExposureUpperList) %>% 
+  as_tibble()
+
+LM1scaled <- cbind(Exposure0List, Outcome0List, pVal1ExposureList, beta1ScaledList, CI1LowerScaledList, CI1UpperScaledList) %>% 
+  as_tibble()
+
+LM2scaled <- cbind(Exposure0List, Outcome0List, pVal2ExposureList, beta2ExposureList, CI2LowerScaledList, CI2UpperScaledList) %>% 
+  as_tibble()
+
+LM1scaled %>% kable() %>% kable_classic(full_width = F) #DAG model output
+LM2scaled %>% kable() %>% kable_classic(full_width = F) #forward model selection output 
+```
+
+
+-----------------------
+
+## Try out Generalized Additive Models (GAM)
+
+https://multithreaded.stitchfix.com/blog/2015/07/30/gam/
+
+```{r}
+
+```
+
