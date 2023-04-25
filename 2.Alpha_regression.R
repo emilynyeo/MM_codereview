@@ -51,10 +51,11 @@ InfantFactors <- c("bsid_se_cs", "bsid_ab_cs",
                    "bsid_lang_cs", "bsid_mot_gm_ss", "bsid_mot_fm_ss")
 
 #output plots from loop to pdf
-pdf(file = paste0(d3,"alpha_cogn_plots_Feb2023.pdf",sep=""))
+pdf(file = paste0(d3,"alpha_cogn_plots_April2023.pdf",sep=""))
 
 # loop components 
 exposureNamesList <- character(0)
+#for model 1
 pVal1ExposureList <- numeric(0)
 beta1ExposureList <- numeric(0)
 beta1SDList <- numeric(0)
@@ -63,6 +64,7 @@ CI1ExposureLowerList <- numeric(0)
 CI1ExposureUpperList <- numeric(0)
 CI1UpperScaledList <- numeric(0)
 CI1LowerScaledList <- numeric(0)
+#for model 2
 pVal2ExposureList <- numeric(0)
 beta2ExposureList <- numeric(0)
 beta2SDList <- numeric(0)
@@ -71,6 +73,7 @@ CI2ExposureLowerList <- numeric(0)
 CI2ExposureUpperList <- numeric(0)
 CI2UpperScaledList <- numeric(0)
 CI2LowerScaledList <- numeric(0)
+
 Exposure0List <- numeric(0)
 Outcome0List <- character(0)
 allExposures <- ExposureFactors
@@ -86,7 +89,7 @@ for(j in seq(1:length(InfantFactors)))
   {
     
     # Choose the timepoint of interest (remember to change the loop if you change it)
-    meta_6m<- a_meta %>% filter(timepoint == 6)
+    meta_6m <- a_meta %>% filter(timepoint == 6) #old run without removing 
     
     # Create dateframe without NAs (include all variables to be adjusted for in model)
     thisDataInstance = na.omit(data.frame(thisOutcome=meta_6m[,names(meta_6m) %in% InfantFactors[j]], thisExposureFactor = meta_6m[,names(meta_6m) %in% ExposureFactors[i]],

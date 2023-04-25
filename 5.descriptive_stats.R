@@ -56,8 +56,12 @@ table_6m <- CreateTableOne(vars = vars, data = timepoint6, factorVars = cat_vars
 # creating table 1 comparing between cog quartiles
 table_6m_quartiles <- CreateTableOne(vars = vars,  strata =c("cog_quartile"), data = timepoint6, factorVars = cat_vars, addOverall = TRUE)
 table_6m_cog_low2high <- CreateTableOne(vars = vars,  strata =c("cog_low2high"), data = timepoint6, factorVars = cat_vars, addOverall = TRUE)
+
+amc_6m_cog_low2high <- CreateTableOne(vars = vars,  strata =c("cog_low2high"), data = amc, factorVars = cat_vars, addOverall = TRUE)
 # saving the tables of interest
-table_6m_cog_low2high <- as.data.frame.Tableone(table_6m_cog_low2high)
+table_6m_cog_low2high <- as.data.frame.table1(table_6m_cog_low2high)
+table_amc_6m_cog_low2high <- as.data.frame(amc_6m_cog_low2high)
+
 write.csv(Table1_tpts, "table1_timepoints.csv")
 
 # not working, use the janitor package 

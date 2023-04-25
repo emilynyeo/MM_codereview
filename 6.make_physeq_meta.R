@@ -199,6 +199,7 @@ a_meta <- meta %>% left_join(shannon, by=c("dyad_id", "timepoint")) %>%
 
 a_meta_physeq <- a_meta %>% rename("gut_richness" = "observed_features")
 
+which(duplicated(a_meta_physeq$merge_id_dyad))
 # must have unique ID's
 #a_meta <- a_meta %>% 
 #filter(dyad_id %in% unique(a_meta$dyad_id))

@@ -29,8 +29,18 @@ meta <- read.csv(paste0(d1,"3_mothersMilk_metadata_timepointsAsRows_updated05102
 
 #select only columns of interest (21) and remove infants without cognitive scores (300) ####
 meta <- meta %>% 
-  filter(!is.na(bsid_cog_cs)) %>% 
-  dplyr::select('merge_id_dyad','dyad_id','timepoint','bsid_cog_cs','bsid_lang_cs', 'bsid_lang_cs','bsid_mot_cs','bsid_mot_fm_ss','bsid_mot_gm_ss','bsid_se_cs', 'bsid_ab_cs', 'SES_index_final','baby_gender','baby_birthweight_kg','prepreg_bmi_kgm2','mother_age', 'father_age', 'moms_ed_level','martial_status','pets','inf_antibiotics','breastmilk_per_day','gestational_age_category','mode_of_delivery')
+  #filter(!is.na(bsid_cog_cs)) %>% 
+  dplyr::select('merge_id_dyad','dyad_id','timepoint',
+                #cognitive variables 
+                'bsid_cog_cs','bsid_lang_cs','bsid_lang_cs','bsid_mot_cs','bsid_mot_fm_ss',
+                'bsid_mot_gm_ss','bsid_se_cs', 'bsid_ab_cs', 'bayleys_test_bsid3_complete',
+                'bsid_notes',
+                #socio-economic variables
+                'SES_index_final','moms_ed_level','martial_status','pets',
+                #biological variables
+                'baby_gender','baby_birthweight_kg','prepreg_bmi_kgm2','mother_age', 
+                'father_age','inf_antibiotics','breastmilk_per_day',
+                'gestational_age_category','mode_of_delivery')
 
 # create variables of interest ####
 # Breast feeding per day
@@ -48,17 +58,17 @@ meta$baby_gender_cat <- factor(ifelse(meta$baby_gender %in% 1,
                                          "Female","Male"))  
   
 # Cognitive category, low, medium, high 
-hist(meta$bsid_cog_cs)
-hist(meta$bsid_mot_cs)
+#hist(meta$bsid_cog_cs)
+#hist(meta$bsid_mot_cs)
 
 #categorizing cognition by the means and SD
 meta$cog_mean_sd <- as.factor(ifelse(meta$bsid_cog_cs < 81.33925, 'below_mean-1SD', 
-                                     ifelse(meta$bsid_cog_cs < 106.3654, 'within_SDs', 'above_mean+1SD')))
+                              ifelse(meta$bsid_cog_cs < 106.3654, 'within_SDs', 'above_mean+1SD')))
 
 #categorizing cognition by the literature cutoff for MDI 
 meta$cog_low2high <- as.factor(ifelse(meta$bsid_cog_cs < 70, "severe", 
-                                      ifelse(meta$bsid_cog_cs < 85, "at risk", 
-                                             ifelse(meta$bsid_cog_cs < 100,"mild average", "high"))))
+                               ifelse(meta$bsid_cog_cs < 85, "at risk", 
+                               ifelse(meta$bsid_cog_cs < 100,"mild average", "high"))))
 
 # similarly categorizing motor scores (looking at histogram)
 meta$mot_low2high <- as.factor(ifelse(meta$bsid_mot_cs < 80, "low", 
@@ -71,9 +81,9 @@ quantile(meta$bsid_cog_cs,
                      na.rm = TRUE) # 25% 50% 75% = 90  95 100
 
 meta$cog_quartile <- ifelse(ntile(n = 4, meta$bsid_cog_cs)==1, "Q1",
-                               ifelse(ntile(n=4,meta$bsid_cog_cs)==2, "Q2",
-                                      ifelse(ntile(n=4,meta$bsid_cog_cs)==3, "Q3",
-                                             ifelse(ntile(n=4,meta$bsid_cog_cs)==4, "Q4", "NA"))))
+                     ifelse(ntile(n=4,meta$bsid_cog_cs)==2, "Q2",
+                     ifelse(ntile(n=4,meta$bsid_cog_cs)==3, "Q3",
+                     ifelse(ntile(n=4,meta$bsid_cog_cs)==4, "Q4", "NA"))))
 
 # force these to be factors
 meta$baby_gender <- factor(meta$baby_gender, labels = c("Female", "Male"))

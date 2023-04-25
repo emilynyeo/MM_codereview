@@ -66,7 +66,7 @@ data(GlobalPatterns)
 mdf_prep <- prep_mdf(GlobalPatterns)
 
 # Generate a color object for the specified data
-color_objs_GP <- create_color_dfs(mdf_prep,selected_groups = c("Verrucomicrobia", "Proteobacteria", "Actinobacteria", "Bacteroidetes", "Firmicutes") , cvd = TRUE)
+color_objs_GP <- create_color_dfs(mdf_prep,selected_groups = c("Verrucomicrobia", "Proteobacteria", "Actinobacteria", "Bacteroidetes", "Firmicutes") , cvd = TRUE) #only have 226 OTU's in total
 
 # Extract
 mdf_GP <- color_objs_GP$mdf
@@ -105,6 +105,7 @@ plot_diff <- plot + scale_y_continuous(labels = scales::percent, expand = expans
   theme(plot.margin = margin(6,20,6,6))
 
 plot_grid(plot_diff, GP_legend,  rel_widths = c(1, .25))
+
 
 
 

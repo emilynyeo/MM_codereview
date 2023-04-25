@@ -237,7 +237,7 @@ rownames(amp_otu) <- amp_otu[,1]
 # create ampvis object
 datraw <- amp_load(otutable = otu_norm3,
                    metadata = meta_3,
-                   taxonomy = taxonomy_table3)
+                   taxonomy = taxonomy_table2)
 
 plot.heat <- datraw %>%
   amp_heatmap(group_by = "dyad_id",
